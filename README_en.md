@@ -98,7 +98,7 @@ data_BaseData info
 | Network | Yes | **No** (network items trimmed) |
 | Registers | 32-bit MMIO | **8-bit I/O space 0x00-0xFF** (RegAbility width 8) |
 
-### 6-b. platformio_ide Notes (AVR register-level)
+### 7. platformio_ide Notes (AVR register-level)
 
 The `platformio_ide/` edition does not depend on Arduino libraries; `fe_port.c` drives the ATmega328P peripherals directly:
 
@@ -119,7 +119,7 @@ pio device monitor # serial monitor (115200)
 
 > To change MCU: edit `board` in `platformio.ini` (e.g. `nanoatmega328`, `megaatmega2560`) and adjust the pin map in `fe_port.c`.
 
-### 6-c. MCU-Specific Modules
+### 8. MCU-Specific Modules
 
 Beyond main-repo capabilities, 3 **MCU-specific** modules (registers / GPIO / chip info) are provided. The R3 registers are **8-bit AVR I/O space** (0x00-0xFF); GPIO uses Arduino pin numbers:
 
@@ -143,14 +143,14 @@ data_ChipData info
 
 > ⚠️ Register access touches hardware directly; a wrong write may crash the system. Debug/low-level use only.
 
-### 7. Correspondence with the Main Repo
+### 9. Correspondence with the Main Repo
 
 - Commands match the main repo exactly, and the implementation is isomorphic with MCU-C51 / MCU-ESP32.
 - `Atom` model: singleton global Atom, `data_` / `ability_` prefix routing.
 - Tokens via HMAC-SHA256 (pure C, no mbedTLS), key persisted in EEPROM.
 - Modbus register tables live in RAM; RTU entry `modbus_slave_service()` is reserved.
 
-### 8. Sibling Projects
+### 10. Sibling Projects
 
 - **[FasterEdge MCU - ESP32](https://github.com/FasterEdge/MCU-ESP32)**: dual-core, WiFi/BLE, more peripherals
 - **[FasterEdge MCU - ESP8266](https://github.com/FasterEdge/MCU-ESP8266)**: WiFi, low power

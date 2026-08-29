@@ -98,7 +98,7 @@ data_BaseData info
 | 网络 | 有 | **无**（能力子集剔除网络项）|
 | 寄存器 | 32 位内存映射 | **8 位 I/O 空间 0x00-0xFF**（RegAbility 宽度 8）|
 
-### 六-b、platformio_ide 版实现说明（AVR 寄存器级）
+### 七、platformio_ide 版实现说明（AVR 寄存器级）
 
 `platformio_ide/` 版不依赖 Arduino 库，`fe_port.c` 直接操作 ATmega328P 外设寄存器：
 
@@ -119,7 +119,7 @@ pio device monitor # 串口监视（115200）
 
 > 换芯片：编辑 `platformio.ini` 的 `board`（如 `nanoatmega328`、`megaatmega2560`），并在 `fe_port.c` 中调整引脚映射表。
 
-### 六-c、MCU 专有模块
+### 八、MCU 专有模块
 
 除主仓库对应能力外，本仓库提供 3 个 **MCU 专有** 模块（寄存器 / GPIO / 芯片信息）。R3 的寄存器为 **8 位 AVR I/O 空间**（0x00-0xFF），GPIO 为 Arduino 引脚号：
 
@@ -143,14 +143,14 @@ data_ChipData info
 
 > ⚠️ 寄存器操作直接访问硬件，误写可能导致系统异常，仅供调试/底层驱动使用。
 
-### 七、与 FasterEdge 主仓库的对应关系
+### 九、与 FasterEdge 主仓库的对应关系
 
 - 命令名与主仓库**完全一致**，与 MCU-C51 / MCU-ESP32 实现同构
 - `Atom` 模型：单例全局 Atom，`data_` / `ability_` 前缀路由
 - 令牌用 HMAC-SHA256（纯 C，无 mbedTLS），密钥 EEPROM 持久化
 - Modbus 寄存器表存 RAM，RTU 帧服务入口 `modbus_slave_service()` 已预留
 
-### 八、姊妹项目
+### 十、姊妹项目
 
 - **[FasterEdge MCU - ESP32](https://github.com/FasterEdge/MCU-ESP32)**：双核、WiFi/BLE、更多外设
 - **[FasterEdge MCU - ESP8266](https://github.com/FasterEdge/MCU-ESP8266)**：WiFi、低功耗
