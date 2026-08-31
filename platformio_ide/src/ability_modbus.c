@@ -53,6 +53,9 @@ fe_output_t ability_modbus_dispatch(void *inst, const char *act, const char *arg
             if (comma) count = atoi(comma + 1);
         }
         if (addr < 0 || count < 0) return fe_err(act, "bad args");
+        // A 16-bit register needs up to 5 digits plus a comma.  Cap textual
+        // reads so the fixed 96-byte response buffer cannot overflow.
+        if (count > 12) return fe_err(act, "count too large");
 
         if (strcmp(act, "read_holding") == 0) {
             char out[96];
