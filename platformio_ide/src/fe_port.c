@@ -1,3 +1,7 @@
+/* FasterEdge 开源项目
+ * GitHub: https://github.com/FasterEdge
+ * Gitee:  https://gitee.com/FasterEdge
+ */
 // fe_port.c — FasterEdge MCU 平台移植层实现（Arduino Uno R3 / ATmega328P 版）
 // 真实实现：寄存器级操作（avr-libc）。
 //   UART0  : USART0 寄存器（UBRR0/UCSR0A/B/C/UDR0）
