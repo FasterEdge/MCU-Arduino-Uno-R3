@@ -1,3 +1,4 @@
+// FasterEdge 开源项目 - Github: https://github.com/FasterEdge - Gitee: https://gitee.com/FasterEdge
 // fe_data.h — FasterEdge MCU Data 模块声明（Arduino Uno R3 / ATmega328P 版）
 // Base / Config（Keyring 合并入 OneKeyAbility，NetMap 因无网络省略）
 #ifndef FE_DATA_H

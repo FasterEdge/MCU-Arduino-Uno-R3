@@ -1,3 +1,4 @@
+// FasterEdge 开源项目 - Github: https://github.com/FasterEdge - Gitee: https://gitee.com/FasterEdge
 // ability_reg.cpp — RegAbility 实现（Arduino Uno R3 / ATmega328P 版，MCU 专有）
 // MCU 专有能力：内存映射寄存器读写（8 位，AVR I/O 空间 0x00-0xFF）。
 #include "fe_ability.h"

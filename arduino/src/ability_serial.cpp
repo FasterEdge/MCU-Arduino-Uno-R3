@@ -1,3 +1,4 @@
+// FasterEdge 开源项目 - Github: https://github.com/FasterEdge - Gitee: https://gitee.com/FasterEdge
 // ability_serial.cpp — SerialAbility 实现（Arduino Uno R3 版）
 // 单 UART（Serial over USB/UART0）。
 #include "fe_ability.h"

@@ -1,3 +1,4 @@
+// FasterEdge 开源项目 - Github: https://github.com/FasterEdge - Gitee: https://gitee.com/FasterEdge
 // data_config.cpp — ConfigData 实现（Arduino Uno R3 版）
 // 扁平点号路径 KV 配置（EEPROM 持久化）：get / set / delete / list / snapshot
 #include "fe_data.h"

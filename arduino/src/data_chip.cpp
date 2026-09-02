@@ -1,3 +1,4 @@
+// FasterEdge 开源项目 - Github: https://github.com/FasterEdge - Gitee: https://gitee.com/FasterEdge
 // data_chip.cpp — ChipData 实现（Arduino Uno R3 / ATmega328P 版，MCU 专有）
 #include "fe_data.h"
 namespace fe {

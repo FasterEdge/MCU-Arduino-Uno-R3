@@ -1,3 +1,4 @@
+// FasterEdge 开源项目 - Github: https://github.com/FasterEdge - Gitee: https://gitee.com/FasterEdge
 // ability_gpio.cpp — GpioAbility 实现（Arduino Uno R3 / ATmega328P 版，MCU 专有）
 // MCU 专有能力：Arduino 引脚 GPIO 控制（pin 0-19: D0-D13 + A0-A5=14-19）。
 #include "fe_ability.h"

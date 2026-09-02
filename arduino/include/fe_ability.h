@@ -1,3 +1,4 @@
+// FasterEdge 开源项目 - Github: https://github.com/FasterEdge - Gitee: https://gitee.com/FasterEdge
 // fe_ability.h — FasterEdge MCU Ability 模块声明（Arduino Uno R3 版）
 // 无网络合理子集：Base / Role / Time / OneKey / Serial / Modbus + Reg / Gpio
 #pragma once
