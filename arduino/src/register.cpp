@@ -43,7 +43,7 @@ void registerAllAbilities(Atom &atom) {
     atom.registerAbility({ "ModbusAbility", "Modbus", modbusAbilityCmds, sizeof(modbusAbilityCmds)/sizeof(modbusAbilityCmds[0]), &g_modbusAbility, modbusAbilityDispatch });
     atom.registerAbility({ "RegAbility",    "寄存器操作(专有)", regAbilityCmds, sizeof(regAbilityCmds)/sizeof(regAbilityCmds[0]), &g_regAbility,   regAbilityDispatch });
     atom.registerAbility({ "GpioAbility",   "引脚 GPIO(专有)", gpioAbilityCmds, sizeof(gpioAbilityCmds)/sizeof(gpioAbilityCmds[0]), &g_gpioAbility, gpioAbilityDispatch });
-    EEPROM.begin(1024);
+    EEPROM.begin(0);    // AVR: begin(addr) 为起始偏移(非容量), 1024=芯片末尾导致后续读写越界; 用 0 保持绝对地址语义
     g_serialAbility.open = false; g_serialAbility.baud = 115200;
     g_modbusAbility.unitId = 1;
     g_modbusAbility.holdingRegs.assign(32, 0);
