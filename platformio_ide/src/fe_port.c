@@ -23,11 +23,15 @@
 int fe_snprintf(char *buf, u16 size, const char *fmt, ...) {
     va_list ap;
     int n;
+    if (size == 0) return 0;
     va_start(ap, fmt);
     n = vsnprintf(buf, size, fmt, ap);
     va_end(ap);
     if (n < 0) { buf[0] = 0; return 0; }
-    if ((u16)n >= size) buf[size - 1] = 0;
+    // 返回"实际写入长度"而非 vsnprintf 的 should-be 长度: 调用点用
+    // n += fe_snprintf(out+n, sizeof(out)-n, ...) 累加, should-be 长度在截断时
+    // 会越过缓冲、使 sizeof(out)-n 发生 u16 下溢并连续越界写栈。
+    if ((u16)n >= size) { buf[size - 1] = 0; return (int)(size - 1); }
     return n;
 }
 
