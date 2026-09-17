@@ -164,12 +164,31 @@ void fe_port_timer0_init(void) {
 }
 
 // ============================================================
-// 随机数（LCG；可扩展 ADC 噪声熵源）
+// 随机数（LCG + ADC 噪声 + 上电时间播种）
 // ============================================================
 static u32 s_rng = 0xFEEDBEEFUL;
+static u8 s_rng_seeded = 0;
+
+// 用 ADC 噪声(浮空 ADC0/A0 的低位) + 上电 tick 混合播种 LCG。
+// 固定种子会让所有设备首次上电生成相同 HMAC secret(onekey),
+// 攻击者可离线算出 secret 并伪造任意设备的鉴权 token。
+static void seed_rng(void) {
+    u8 acc = 0, i;
+    ADMUX = (1 << REFS0);   // AVcc 参考 + 通道 0(ADC0/A0)
+    ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0); // 128 分频
+    for (i = 0; i < 32; i++) {
+        ADCSRA |= (1 << ADSC);
+        while (ADCSRA & (1 << ADSC)) ;
+        acc ^= (u8)(ADCL & 3);                    // 低 2 位热/电气噪声
+        acc = (u8)((acc << 1) | (acc >> 7));      // 旋转避免低位偏置
+    }
+    s_rng ^= (u32)acc | ((u32)s_tick_ms << 8) | ((u32)acc << 24);
+    s_rng_seeded = 1;
+}
 
 void fe_port_random_fill(u8 *buf, u16 len) {
     u16 i;
+    if (!s_rng_seeded) seed_rng();
     for (i = 0; i < len; i++) {
         s_rng = s_rng * 1664525UL + 1013904223UL;   // LCG
         buf[i] = (u8)(s_rng >> 24);

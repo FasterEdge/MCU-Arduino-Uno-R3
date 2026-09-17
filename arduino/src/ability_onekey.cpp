@@ -30,6 +30,16 @@ static void b64url_encode(const uint8_t *data, size_t len, char *out, size_t out
 }
 #define SECRET_ADDR 0
 #define SEQ_ADDR    64
+// 用浮空 A0 的 ADC 低位噪声 + 上电时间混合播种 random()。
+// Arduino random() 未播种时序列固定, 所有设备首次上电会生成相同 HMAC secret,
+// 攻击者可离线算出 secret 并伪造任意设备的鉴权 token。
+static void seedRandom() {
+    uint32_t seed = (uint32_t)millis();
+    for (int i = 0; i < 8; i++) {
+        seed ^= ((uint32_t)analogRead(A0) & 3u) << (i * 2);
+    }
+    randomSeed(seed);
+}
 static String loadOrCreateSecret() {
     char buf[33];
     bool hasSecret = true;
@@ -39,6 +49,7 @@ static String loadOrCreateSecret() {
     }
     buf[32] = 0;
     if (!hasSecret) {
+        seedRandom();
         for (int i = 0; i < 32; i++) {
             buf[i] = (char)random(256);
             EEPROM.write(SECRET_ADDR + i, (uint8_t)buf[i]);
