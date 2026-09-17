@@ -76,7 +76,7 @@ void loop() {
         } else if (c == '\r') {
             // ignore
         } else {
-            inputBuffer += c;
+            if (inputBuffer.length() < 96) inputBuffer += c;  // 上限防无界 realloc 耗尽堆
         }
     }
     delay(10);
