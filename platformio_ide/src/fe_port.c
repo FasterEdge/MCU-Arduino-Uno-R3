@@ -49,6 +49,8 @@ ISR(USART_RX_vect) {
 void fe_port_uart_init(u8 port, u32 baud, fe_port_uart_rx_cb_t rx_cb, void *user) {
     u16 ubrr;
     (void)port; (void)rx_cb; (void)user;
+    // 波特率校验: baud=0 除零 / 大波特率下溢 0xFFFF; 非法回退默认 115200。
+    if (baud < 300u || baud > 115200u) baud = 115200u;
     // 波特率：UBRR = F_CPU/16/baud - 1（U2X 关闭）
     ubrr = (u16)((F_CPU / 16UL / baud) - 1);
     UBRR0H = (u8)(ubrr >> 8);
