@@ -8,24 +8,25 @@ namespace fe {
 CommandOutput roleAbilityDispatch(void *inst, const char *act, const String &args) {
     RoleAbility *self = static_cast<RoleAbility *>(inst);
 
-    if (strcmp(act, "describe") == 0) {
+    if (FE_EQ_P(act, "describe")) {
         return CommandOutput{String(act),
-            String("{\"name\":\"RoleAbility\",\"role\":\"") + self->role + "\"}", String()};
+            String(F("{\"name\":\"RoleAbility\",\"role\":\"")) + self->role + F("\"}"), String()};
     }
-    if (strcmp(act, "set_role") == 0) {
+    if (FE_EQ_P(act, "set_role")) {
         if (args.length() == 0)
-            return CommandOutput{String(act), String(), String("missing role arg")};
+            return CommandOutput{String(act), String(), String(F("missing role arg"))};
         // 合法角色：edge / cloud / standalone
         String r = args;
-        if (r != "edge" && r != "cloud" && r != "standalone")
-            return CommandOutput{String(act), String(), String("invalid role: ") + r};
+        if (strcmp_P(r.c_str(), PSTR("edge")) != 0 && strcmp_P(r.c_str(), PSTR("cloud")) != 0 &&
+            strcmp_P(r.c_str(), PSTR("standalone")) != 0)
+            return CommandOutput{String(act), String(), String(F("invalid role: ")) + r};
         self->role = r;
-        return CommandOutput{String(act), String("role=") + r, String()};
+        return CommandOutput{String(act), String(F("role=")) + r, String()};
     }
-    if (strcmp(act, "get_role") == 0) {
-        return CommandOutput{String(act), String("role=") + self->role, String()};
+    if (FE_EQ_P(act, "get_role")) {
+        return CommandOutput{String(act), String(F("role=")) + self->role, String()};
     }
-    return CommandOutput{String(act), String(), String("unsupported command: ") + act};
+    return CommandOutput{String(act), String(), String(F("unsupported command: ")) + act};
 }
 
 } // namespace fe

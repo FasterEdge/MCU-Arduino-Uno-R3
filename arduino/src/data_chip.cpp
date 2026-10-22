@@ -4,14 +4,14 @@
 namespace fe {
 CommandOutput chipDataDispatch(void *inst, const char *act, const String &args) {
     (void)inst; (void)args;
-    if (strcmp(act, "info") == 0) {
+    if (FE_EQ_P(act, "info")) {
         char buf[160];
-        snprintf(buf, sizeof(buf),
-                 "{\"chip\":\"ATmega328P\",\"arch\":\"AVR\",\"ramBytes\":2048,"
-                 "\"flashBytes\":32768,\"eepromBytes\":1024,\"freqMHz\":%lu}",
-                 (unsigned long)(F_CPU / 1000000UL));
+        snprintf_P(buf, sizeof(buf),
+                   PSTR("{\"chip\":\"ATmega328P\",\"arch\":\"AVR\",\"ramBytes\":2048,"
+                        "\"flashBytes\":32768,\"eepromBytes\":1024,\"freqMHz\":%lu}"),
+                   (unsigned long)(F_CPU / 1000000UL));
         return CommandOutput{String(act), String(buf), String()};
     }
-    return CommandOutput{String(act), String(), String("unsupported command: ") + act};
+    return CommandOutput{String(act), String(), String(F("unsupported command: ")) + act};
 }
 } // namespace fe

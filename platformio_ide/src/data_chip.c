@@ -8,10 +8,10 @@
 
 fe_output_t data_chip_dispatch(void *inst, const char *act, const char *args) {
     (void)inst; (void)args;
-    if (strcmp(act, "info") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("info")) == 0) {
         char out[160];
         fe_port_chip_info(out, sizeof(out));
         return fe_ok(act, out);
     }
-    return fe_err(act, "unsupported command");
+    return fe_err_p(act, FE_PSTR("unsupported command"));
 }

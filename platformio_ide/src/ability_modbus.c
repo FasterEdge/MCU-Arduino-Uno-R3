@@ -13,7 +13,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MODBUS_REGS 32
+#define MODBUS_REGS 16
+
+static modbus_ability_t s_modbus = { 1, {0}, {0}, {0}, {0} };
 
 // CRC16 (Modbus)
 static u16 modbus_crc(const u8 *data, u16 len) {
@@ -29,20 +31,21 @@ static u16 modbus_crc(const u8 *data, u16 len) {
 }
 
 fe_output_t ability_modbus_dispatch(void *inst, const char *act, const char *args) {
-    modbus_ability_t *self = (modbus_ability_t *)inst;
+    modbus_ability_t *self = &s_modbus;
+    (void)inst;
 
-    if (strcmp(act, "set_unit_id") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("set_unit_id")) == 0) {
         int id;
         char out[24];
         id = args ? atoi(args) : 0;
-        if (id <= 0 || id > 247) return fe_err(act, "invalid unit id");
+        if (id <= 0 || id > 247) return fe_err_p(act, FE_PSTR("invalid unit id"));
         self->unit_id = (u8)id;
-        fe_snprintf(out, sizeof(out), "unit_id=%d", id);
+        fe_snprintf_P(out, sizeof(out), FE_PSTR("unit_id=%d"), id);
         return fe_ok(act, out);
     }
-    if (strcmp(act, "get_unit_id") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("get_unit_id")) == 0) {
         char out[24];
-        fe_snprintf(out, sizeof(out), "unit_id=%u", self->unit_id);
+        fe_snprintf_P(out, sizeof(out), FE_PSTR("unit_id=%u"), self->unit_id);
         return fe_ok(act, out);
     }
 
@@ -52,49 +55,49 @@ fe_output_t ability_modbus_dispatch(void *inst, const char *act, const char *arg
         if (args && args[0]) {
             char buf[24];
             char *comma;
-            fe_snprintf(buf, sizeof(buf), "%s", args);
+            fe_snprintf_P(buf, sizeof(buf), FE_PSTR("%s"), args);
             comma = strchr(buf, ',');
             addr = atoi(buf);
             if (comma) count = atoi(comma + 1);
         }
-        if (addr < 0 || count < 0) return fe_err(act, "bad args");
+        if (addr < 0 || count < 0) return fe_err_p(act, FE_PSTR("bad args"));
         // A 16-bit register needs up to 5 digits plus a comma.  Cap textual
         // reads so the fixed 96-byte response buffer cannot overflow.
-        if (count > 12) return fe_err(act, "count too large");
+        if (count > 12) return fe_err_p(act, FE_PSTR("count too large"));
 
-        if (strcmp(act, "read_holding") == 0) {
+        if (FE_PGM_STRCMP(act, FE_PSTR("read_holding")) == 0) {
             char out[96];
             u16 n = 0;
             int i;
-            if (addr > MODBUS_REGS - count) return fe_err(act, "addr out of range");
+            if (addr > MODBUS_REGS - count) return fe_err_p(act, FE_PSTR("addr out of range"));
             out[n++] = '[';
             for (i = 0; i < count; i++) {
                 if (i) out[n++] = ',';
-                n += (u16)fe_snprintf(out + n, sizeof(out) - n, "%u",
-                                      self->holding_regs[addr + i]);
+                n += (u16)fe_snprintf_P(out + n, sizeof(out) - n, FE_PSTR("%u"),
+                                        self->holding_regs[addr + i]);
             }
             out[n++] = ']'; out[n] = 0;
             return fe_ok(act, out);
         }
-        if (strcmp(act, "read_input") == 0) {
+        if (FE_PGM_STRCMP(act, FE_PSTR("read_input")) == 0) {
             char out[96];
             u16 n = 0;
             int i;
-            if (addr > MODBUS_REGS - count) return fe_err(act, "addr out of range");
+            if (addr > MODBUS_REGS - count) return fe_err_p(act, FE_PSTR("addr out of range"));
             out[n++] = '[';
             for (i = 0; i < count; i++) {
                 if (i) out[n++] = ',';
-                n += (u16)fe_snprintf(out + n, sizeof(out) - n, "%u",
-                                      self->input_regs[addr + i]);
+                n += (u16)fe_snprintf_P(out + n, sizeof(out) - n, FE_PSTR("%u"),
+                                        self->input_regs[addr + i]);
             }
             out[n++] = ']'; out[n] = 0;
             return fe_ok(act, out);
         }
-        if (strcmp(act, "read_coils") == 0) {
+        if (FE_PGM_STRCMP(act, FE_PSTR("read_coils")) == 0) {
             char out[96];
             u16 n = 0;
             int i;
-            if (addr > MODBUS_REGS - count) return fe_err(act, "addr out of range");
+            if (addr > MODBUS_REGS - count) return fe_err_p(act, FE_PSTR("addr out of range"));
             out[n++] = '[';
             for (i = 0; i < count; i++) {
                 if (i) out[n++] = ',';
@@ -103,11 +106,11 @@ fe_output_t ability_modbus_dispatch(void *inst, const char *act, const char *arg
             out[n++] = ']'; out[n] = 0;
             return fe_ok(act, out);
         }
-        if (strcmp(act, "read_discrete") == 0) {
+        if (FE_PGM_STRCMP(act, FE_PSTR("read_discrete")) == 0) {
             char out[96];
             u16 n = 0;
             int i;
-            if (addr > MODBUS_REGS - count) return fe_err(act, "addr out of range");
+            if (addr > MODBUS_REGS - count) return fe_err_p(act, FE_PSTR("addr out of range"));
             out[n++] = '[';
             for (i = 0; i < count; i++) {
                 if (i) out[n++] = ',';
@@ -118,45 +121,45 @@ fe_output_t ability_modbus_dispatch(void *inst, const char *act, const char *arg
         }
     }
 
-    if (strcmp(act, "write_holding") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("write_holding")) == 0) {
         // 参数：addr,value
         char buf[24];
         char *comma;
         int a;
         u16 v;
-        if (!args || !args[0]) return fe_err(act, "expect addr,value");
-        fe_snprintf(buf, sizeof(buf), "%s", args);
+        if (!args || !args[0]) return fe_err_p(act, FE_PSTR("expect addr,value"));
+        fe_snprintf_P(buf, sizeof(buf), FE_PSTR("%s"), args);
         comma = strchr(buf, ',');
-        if (!comma) return fe_err(act, "expect addr,value");
+        if (!comma) return fe_err_p(act, FE_PSTR("expect addr,value"));
         a = atoi(buf);
         v = (u16)atoi(comma + 1);
-        if (a < 0 || a >= MODBUS_REGS) return fe_err(act, "addr out of range");
+        if (a < 0 || a >= MODBUS_REGS) return fe_err_p(act, FE_PSTR("addr out of range"));
         self->holding_regs[a] = v;
-        return fe_ok(act, "{\"written\":true}");
+        return fe_ok_p(act, FE_PSTR("{\"written\":true}"));
     }
-    if (strcmp(act, "write_coil") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("write_coil")) == 0) {
         char buf[24];
         char *comma;
         int a;
         u8 v;
-        if (!args || !args[0]) return fe_err(act, "expect addr,value");
-        fe_snprintf(buf, sizeof(buf), "%s", args);
+        if (!args || !args[0]) return fe_err_p(act, FE_PSTR("expect addr,value"));
+        fe_snprintf_P(buf, sizeof(buf), FE_PSTR("%s"), args);
         comma = strchr(buf, ',');
-        if (!comma) return fe_err(act, "expect addr,value");
+        if (!comma) return fe_err_p(act, FE_PSTR("expect addr,value"));
         a = atoi(buf);
         v = (atoi(comma + 1) != 0);
-        if (a < 0 || a >= MODBUS_REGS) return fe_err(act, "addr out of range");
+        if (a < 0 || a >= MODBUS_REGS) return fe_err_p(act, FE_PSTR("addr out of range"));
         self->coils[a] = v;
-        return fe_ok(act, "{\"written\":true}");
+        return fe_ok_p(act, FE_PSTR("{\"written\":true}"));
     }
-    return fe_err(act, "unsupported command");
+    return fe_err_p(act, FE_PSTR("unsupported command"));
 }
 
 // 供移植层使用的 RTU 从站服务入口：收到完整请求帧后构造响应帧。
 // req 必须是一个完整的 RTU 帧（地址、功能码、PDU、CRC；CRC 低字节在前）。
-// 服务入口不分配内存，响应最大为 69 字节（本实现的 32 项寄存器表）。
+// 服务入口不分配内存，响应最大为 37 字节（本实现的 16 项寄存器表）。
 static void modbus_send_response(const u8 *pdu, u8 pdu_len) {
-    u8 frame[69];
+    u8 frame[40];
     u16 crc;
     u8 i;
     if ((u16)pdu_len + 2 > (u16)sizeof(frame)) return;
@@ -183,7 +186,7 @@ void modbus_slave_service(modbus_ability_t *self, const u8 *req, u16 len) {
     u8 unit, function;
     u16 received_crc, calculated_crc;
     u16 address, count, value;
-    u8 pdu[67];
+    u8 pdu[40];
     u8 byte_count, i, out_len;
     u8 broadcast;
 
@@ -218,7 +221,7 @@ void modbus_slave_service(modbus_ability_t *self, const u8 *req, u16 len) {
             }
             modbus_send_response(pdu, (u8)(byte_count + 3));
         } else {
-            // 本地表只有 32 项；因此自然也限制了标准允许的 125 项。
+            // 本地表只有 16 项；因此自然也限制了标准允许的 125 项。
             byte_count = (u8)(count * 2);
             pdu[0] = unit; pdu[1] = function; pdu[2] = byte_count;
             out_len = 3;

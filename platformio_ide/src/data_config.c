@@ -11,6 +11,8 @@
 #define CFG_VAL_LEN   32
 #define CFG_ENTRY     (CFG_KEY_LEN + CFG_VAL_LEN)   // 48 字节
 
+static config_data_t s_config = { 0x0000 };
+
 static void norm_key(const char *in, char *out, u16 outlen) {
     u16 n = 0;
     const char *p;
@@ -35,33 +37,34 @@ static int find_slot(u16 base, const char *key) {
 }
 
 fe_output_t data_config_dispatch(void *inst, const char *act, const char *args) {
-    config_data_t *self = (config_data_t *)inst;
+    config_data_t *self = &s_config;
+    (void)inst;
     u16 base = self->base_addr;
 
-    if (strcmp(act, "get") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("get")) == 0) {
         char key[CFG_KEY_LEN];
         int slot;
         char val[CFG_VAL_LEN];
         char out[80];
-        if (!args || !args[0]) return fe_err(act, "missing key");
+        if (!args || !args[0]) return fe_err_p(act, FE_PSTR("missing key"));
         norm_key(args, key, sizeof(key));
         slot = find_slot(base, key);
-        if (slot < 0) return fe_ok(act, "{}");
+        if (slot < 0) return fe_ok_p(act, FE_PSTR("{}"));
         fe_port_eeprom_get_str(base + (u16)(slot * CFG_ENTRY) + CFG_KEY_LEN,
                                val, sizeof(val));
-        fe_snprintf(out, sizeof(out), "{\"%s\":\"%s\"}", key, val);
+        fe_snprintf_P(out, sizeof(out), FE_PSTR("{\"%s\":\"%s\"}"), key, val);
         return fe_ok(act, out);
     }
-    if (strcmp(act, "set") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("set")) == 0) {
         char buf[64];
         char *eq;
         char key[CFG_KEY_LEN];
         int slot, i;
         u16 addr;
-        if (!args || !args[0]) return fe_err(act, "bad format, expect key=value");
-        fe_snprintf(buf, sizeof(buf), "%s", args);
+        if (!args || !args[0]) return fe_err_p(act, FE_PSTR("bad format, expect key=value"));
+        fe_snprintf_P(buf, sizeof(buf), FE_PSTR("%s"), args);
         eq = strchr(buf, '=');
-        if (!eq) return fe_err(act, "bad format, expect key=value");
+        if (!eq) return fe_err_p(act, FE_PSTR("bad format, expect key=value"));
         *eq = 0;
         norm_key(buf, key, sizeof(key));
         slot = find_slot(base, key);
@@ -71,28 +74,28 @@ fe_output_t data_config_dispatch(void *inst, const char *act, const char *args) 
                 if (!fe_port_eeprom_get_str(base + (u16)(i * CFG_ENTRY), k, sizeof(k)) ||
                     k[0] == 0 || (u8)k[0] == 0xff) { slot = i; break; }
             }
-            if (slot < 0) return fe_err(act, "config full");
+            if (slot < 0) return fe_err_p(act, FE_PSTR("config full"));
             fe_port_eeprom_set_str(base + (u16)(slot * CFG_ENTRY), key);
         }
         addr = base + (u16)(slot * CFG_ENTRY) + CFG_KEY_LEN;
 {
             char v[CFG_VAL_LEN];
-            fe_snprintf(v, sizeof(v), "%s", eq + 1);
+            fe_snprintf_P(v, sizeof(v), FE_PSTR("%s"), eq + 1);
             fe_port_eeprom_set_str(addr, v);
         }
-        return fe_ok(act, "saved");
+        return fe_ok_p(act, FE_PSTR("saved"));
     }
-    if (strcmp(act, "delete") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("delete")) == 0) {
         char key[CFG_KEY_LEN];
         int slot;
-        if (!args || !args[0]) return fe_err(act, "missing key");
+        if (!args || !args[0]) return fe_err_p(act, FE_PSTR("missing key"));
         norm_key(args, key, sizeof(key));
         slot = find_slot(base, key);
         if (slot >= 0)
             fe_port_eeprom_set_str(base + (u16)(slot * CFG_ENTRY), "");  // 清空 key 作删除标记
-        return fe_ok(act, "deleted");
+        return fe_ok_p(act, FE_PSTR("deleted"));
     }
-    if (strcmp(act, "list") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("list")) == 0) {
         char out[96];
         u16 n = 0;
         int i;
@@ -102,20 +105,20 @@ fe_output_t data_config_dispatch(void *inst, const char *act, const char *args) 
             u16 addr = base + (u16)(i * CFG_ENTRY);
             if (!fe_port_eeprom_get_str(addr, k, sizeof(k)) || k[0] == 0 || (u8)k[0] == 0xff) continue;
             if (n) out[n++] = ',';
-            n += (u16)fe_snprintf(out + n, sizeof(out) - n, "\"%s\"", k);
+            n += (u16)fe_snprintf_P(out + n, sizeof(out) - n, FE_PSTR("\"%s\""), k);
         }
         {
             char full[120];
-            fe_snprintf(full, sizeof(full), "{\"keys\":[%s]}", out);
+            fe_snprintf_P(full, sizeof(full), FE_PSTR("{\"keys\":[%s]}"), out);
             return fe_ok(act, full);
         }
     }
-    if (strcmp(act, "snapshot") == 0) {
-        char out[600];
+    if (FE_PGM_STRCMP(act, FE_PSTR("snapshot")) == 0) {
+        char out[96];
         u16 n = 0;
         int i;
         out[0] = 0;
-        n += (u16)fe_snprintf(out + n, sizeof(out) - n, "{\"snapshot\":{");
+        n += (u16)fe_snprintf_P(out + n, sizeof(out) - n, FE_PSTR("{\"snapshot\":{"));
         for (i = 0; i < CFG_SLOTS; i++) {
             char k[CFG_KEY_LEN], v[CFG_VAL_LEN];
             u16 addr = base + (u16)(i * CFG_ENTRY);
@@ -123,10 +126,10 @@ fe_output_t data_config_dispatch(void *inst, const char *act, const char *args) 
             fe_port_eeprom_get_str(addr + CFG_KEY_LEN, v, sizeof(v));
             if (n + 6 >= sizeof(out)) break;
             if (out[n - 1] != '{') out[n++] = ',';
-            n += (u16)fe_snprintf(out + n, sizeof(out) - n, "\"%s\":\"%s\"", k, v);
+            n += (u16)fe_snprintf_P(out + n, sizeof(out) - n, FE_PSTR("\"%s\":\"%s\""), k, v);
         }
-        n += (u16)fe_snprintf(out + n, sizeof(out) - n, "}}");
+        n += (u16)fe_snprintf_P(out + n, sizeof(out) - n, FE_PSTR("}}"));
         return fe_ok(act, out);
     }
-    return fe_err(act, "unsupported command");
+    return fe_err_p(act, FE_PSTR("unsupported command"));
 }

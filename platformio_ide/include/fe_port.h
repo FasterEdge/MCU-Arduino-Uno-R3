@@ -13,10 +13,41 @@
 #include "fe.h"   // u8/u16/u32 类型、TRUE/FALSE
 
 // ============================================================
+// Flash 常量（AVR PROGMEM）与宿主编译兼容层
+// ATmega328P 只有 2KB SRAM：字符串/常量表默认会被 avr-gcc
+// 放进 .data 并占用 RAM，因此统一标注 FE_PROGMEM 并走
+// pgm_read_* 读取；在宿主机测试/语法检查时退化为普通常量。
+// ============================================================
+#ifdef __AVR__
+#include <avr/pgmspace.h>
+#define FE_PROGMEM         PROGMEM
+#define FE_PSTR(s)         PSTR(s)
+#define FE_PGM_CHAR(p)     pgm_read_byte((PGM_P)(p))
+#define FE_PGM_DWORD(p)    pgm_read_dword((PGM_P)(p))
+#define FE_PGM_PTR(p)      ((const void *)pgm_read_word((PGM_P)(p)))
+#define FE_PGM_CMD_NAME(cmds, c) ((const char *)FE_PGM_PTR(&(cmds)[c].name))
+#define FE_PGM_EQ(a, s)    (strcmp_P((a), PSTR(s)) == 0)
+#define FE_PGM_STRCMP(a, p) (strcmp_P((a), (PGM_P)(p)))
+#define FE_PGM_STRNCMP(a, p, n) (strncmp_P((a), (PGM_P)(p), (n)))
+#else
+#define FE_PROGMEM
+#define FE_PSTR(s)         (s)
+#define FE_PGM_CHAR(p)     (*(const u8 *)(p))
+#define FE_PGM_DWORD(p)    (*(const u32 *)(p))
+#define FE_PGM_PTR(p)      (p)
+#define FE_PGM_CMD_NAME(cmds, c) ((cmds)[c].name)
+#define FE_PGM_EQ(a, s)    (strcmp((a), (s)) == 0)
+#define FE_PGM_STRCMP(a, p) (strcmp((a), (p)))
+#define FE_PGM_STRNCMP(a, p, n) (strncmp((a), (p), (n)))
+#endif
+
+// ============================================================
 // 格式化输出（fe.c 统一使用）
 // ============================================================
 // 与 snprintf 语义一致：至多 size 字节、始终 NUL 结尾。
 int fe_snprintf(char *buf, u16 size, const char *fmt, ...);
+// flash 版本：fmt 在 flash，%S 参数也在 flash（AVR）；宿主回退普通 vsnprintf。
+int fe_snprintf_P(char *buf, u16 size, const char *fmt_p, ...);
 
 // ============================================================
 // 串口（UART）
@@ -27,6 +58,8 @@ typedef void (*fe_port_uart_rx_cb_t)(u8 byte, void *user);
 void fe_port_uart_init(u8 port, u32 baud, fe_port_uart_rx_cb_t rx_cb, void *user);
 // 发送 len 字节，返回实际发送字节数
 u16 fe_port_uart_write(u8 port, const u8 *data, u16 len);
+// 发送一条 flash 字符串（AVR PROGMEM；宿主普通字符串）
+void fe_port_uart_write_pgm(u8 port, const char *data_p);
 // 是否有数据可读
 u8  fe_port_uart_available(u8 port);
 // 读一个字节（无数据返回 -1）

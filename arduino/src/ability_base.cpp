@@ -5,31 +5,40 @@
 
 namespace fe {
 
+static String makeJsonNameList(const String &names) {
+    String out = F("[");
+    bool first = true;
+    int start = 0;
+    while (start <= names.length()) {
+        int end = names.indexOf(',', start);
+        String item = end >= 0 ? names.substring(start, end) : names.substring(start);
+        if (item.length() > 0) {
+            if (!first) out += F(",");
+            out += F("\"");
+            out += item;
+            out += F("\"");
+            first = false;
+        }
+        if (end < 0) break;
+        start = end + 1;
+    }
+    out += F("]");
+    return out;
+}
+
 CommandOutput baseAbilityDispatch(void *inst, const char *act, const String &args) {
     (void)inst; (void)args;
     BaseAbility *self = static_cast<BaseAbility *>(inst);
 
-    if (strcmp(act, "list_data_names") == 0) {
-        auto names = globalAtom().listDataNames();
-        String out = "[";
-        for (size_t i = 0; i < names.size(); i++) {
-            if (i) out += ",";
-            out += "\"" + names[i] + "\"";
-        }
-        out += "]";
+    if (FE_EQ_P(act, "list_data_names")) {
+        String out = makeJsonNameList(globalAtom().listDataNames());
         return CommandOutput{String(act), out, String()};
     }
-    if (strcmp(act, "list_ability_names") == 0) {
-        auto names = globalAtom().listAbilityNames();
-        String out = "[";
-        for (size_t i = 0; i < names.size(); i++) {
-            if (i) out += ",";
-            out += "\"" + names[i] + "\"";
-        }
-        out += "]";
+    if (FE_EQ_P(act, "list_ability_names")) {
+        String out = makeJsonNameList(globalAtom().listAbilityNames());
         return CommandOutput{String(act), out, String()};
     }
-    return CommandOutput{String(act), String(), String("unsupported command: ") + act};
+    return CommandOutput{String(act), String(), String(F("unsupported command: ")) + act};
 }
 
 } // namespace fe

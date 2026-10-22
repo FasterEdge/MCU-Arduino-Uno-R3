@@ -41,11 +41,12 @@ struct SerialAbility {
 extern CommandOutput serialAbilityDispatch(void *inst, const char *act, const String &args);
 
 struct ModbusAbility {
+    enum { REG_COUNT = 64 };
     uint8_t unitId;
-    std::vector<uint16_t> holdingRegs;
-    std::vector<uint16_t> inputRegs;
-    std::vector<bool>     coils;
-    std::vector<bool>     discreteInputs;
+    uint16_t holdingRegs[REG_COUNT];
+    uint16_t inputRegs[REG_COUNT];
+    uint8_t  coils[REG_COUNT];
+    uint8_t  discreteInputs[REG_COUNT];
     ModbusAbility();
     CommandOutput dispatch(const char *act, const String &args);
 };

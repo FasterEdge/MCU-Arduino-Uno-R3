@@ -1,11 +1,12 @@
 // FasterEdge 开源项目 - Github: https://github.com/FasterEdge - Gitee: https://gitee.com/FasterEdge
 // fe_hmac_sha256.c — HMAC-SHA256 纯 C 实现（零依赖，C51/8051 版）
 #include "fe_hmac_sha256.h"
+#include "fe_port.h"
 #include <string.h>
 
 #define ROTR(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 
-static const u32 K[64] = {
+static const u32 K[64] FE_PROGMEM = {
     0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
     0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
     0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
@@ -25,22 +26,28 @@ void fe_sha256_init(fe_sha256_ctx *ctx) {
 }
 
 static void transform(fe_sha256_ctx *ctx, const u8 *data) {
-    u32 m[64], a, b, c, d, e, f, g, h, t1, t2;
+    u32 m[16], a, b, c, d, e, f, g, h, t1, t2;
     u8 i;
     for (i = 0; i < 16; i++)
         m[i] = ((u32)data[i*4] << 24) | ((u32)data[i*4+1] << 16) |
                ((u32)data[i*4+2] << 8) | (u32)data[i*4+3];
-    for (i = 16; i < 64; i++) {
-        u32 s0 = ROTR(m[i-15],7) ^ ROTR(m[i-15],18) ^ (m[i-15] >> 3);
-        u32 s1 = ROTR(m[i-2],17) ^ ROTR(m[i-2],19) ^ (m[i-2] >> 10);
-        m[i] = m[i-16] + s0 + m[i-7] + s1;
-    }
     a = ctx->state[0]; b = ctx->state[1]; c = ctx->state[2]; d = ctx->state[3];
     e = ctx->state[4]; f = ctx->state[5]; g = ctx->state[6]; h = ctx->state[7];
     for (i = 0; i < 64; i++) {
+        u32 wi;
+        if (i >= 16) {
+            u32 x15 = m[(u8)(i + 1) & 15];   // w[i-15]
+            u32 x2  = m[(u8)(i + 14) & 15];  // w[i-2]
+            u32 s0 = ROTR(x15,7) ^ ROTR(x15,18) ^ (x15 >> 3);
+            u32 s1 = ROTR(x2,17) ^ ROTR(x2,19) ^ (x2 >> 10);
+            wi = m[i & 15] + s0 + m[(u8)(i + 9) & 15] + s1;  // w[i-16] + w[i-7]
+            m[i & 15] = wi;
+        } else {
+            wi = m[i];
+        }
         u32 S1 = ROTR(e,6) ^ ROTR(e,11) ^ ROTR(e,25);
         u32 ch = (e & f) ^ (~e & g);
-        u32 t0 = h + S1 + ch + K[i] + m[i];
+        u32 t0 = h + S1 + ch + FE_PGM_DWORD(K + i) + wi;
         u32 S0 = ROTR(a,2) ^ ROTR(a,13) ^ ROTR(a,22);
         u32 maj = (a & b) ^ (a & c) ^ (b & c);
         t1 = t0; t2 = S0 + maj;
@@ -98,9 +105,10 @@ void fe_hmac_sha256(const u8 *key, u16 key_len,
                     const u8 *msg, u16 msg_len,
                     u8 out[32]) {
     u8 k[64];
-    u8 ipad[64], opad[64];
+    u8 pad[64];
     u8 inner_hash[32];
     u8 i;
+    fe_sha256_ctx ctx;
 
     if (key_len > 64) {
         fe_sha256(key, key_len, k);
@@ -110,20 +118,17 @@ void fe_hmac_sha256(const u8 *key, u16 key_len,
         memcpy(k, key, key_len);
     }
     for (i = 0; i < 64; i++) {
-        ipad[i] = k[i] ^ 0x36;
-        opad[i] = k[i] ^ 0x5c;
+        pad[i] = k[i] ^ 0x36;
     }
 
-    {
-        fe_sha256_ctx ctx;
-        fe_sha256_init(&ctx);
-        fe_sha256_update(&ctx, ipad, 64);
-        fe_sha256_update(&ctx, msg, msg_len);
-        fe_sha256_final(&ctx, inner_hash);
+    fe_sha256_init(&ctx);
+    fe_sha256_update(&ctx, pad, 64);
+    fe_sha256_update(&ctx, msg, msg_len);
+    fe_sha256_final(&ctx, inner_hash);
 
-        fe_sha256_init(&ctx);
-        fe_sha256_update(&ctx, opad, 64);
-        fe_sha256_update(&ctx, inner_hash, 32);
-        fe_sha256_final(&ctx, out);
-    }
+    for (i = 0; i < 64; i++) pad[i] = k[i] ^ 0x5c;
+    fe_sha256_init(&ctx);
+    fe_sha256_update(&ctx, pad, 64);
+    fe_sha256_update(&ctx, inner_hash, 32);
+    fe_sha256_final(&ctx, out);
 }

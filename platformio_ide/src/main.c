@@ -37,44 +37,46 @@ static u8 read_line(char *buf, u16 buflen, u16 *len) {
 
 static void print_help(void) {
     char names[160];
-    fe_port_uart_write(0, (const u8 *)"Usage: <data|ability>_<Name> <act> [args]\r\n", 45);
+    fe_port_uart_write_pgm(0, FE_PSTR("Usage: <data|ability>_<Name> <act> [args]\r\n"));
     fe_list_ability_names(fe_global_atom(), names, sizeof(names));
-    fe_port_uart_write(0, (const u8 *)"abilities: ", 11);
+    fe_port_uart_write_pgm(0, FE_PSTR("abilities: "));
     fe_port_uart_write(0, (const u8 *)names, (u16)strlen(names));
-    fe_port_uart_write(0, (const u8 *)"\r\n", 2);
+    fe_port_uart_write_pgm(0, FE_PSTR("\r\n"));
     fe_list_data_names(fe_global_atom(), names, sizeof(names));
-    fe_port_uart_write(0, (const u8 *)"data: ", 6);
+    fe_port_uart_write_pgm(0, FE_PSTR("data: "));
     fe_port_uart_write(0, (const u8 *)names, (u16)strlen(names));
-    fe_port_uart_write(0, (const u8 *)"\r\nexamples:\r\n", 13);
-    fe_port_uart_write(0, (const u8 *)"  ability_BaseAbility list_ability_names\r\n", 42);
-    fe_port_uart_write(0, (const u8 *)"  ability_TimeAbility sync_manual 1700000000\r\n", 46);
-    fe_port_uart_write(0, (const u8 *)"  ability_ModbusAbility write_holding 0,42\r\n", 45);
-    fe_port_uart_write(0, (const u8 *)"  data_ConfigData set wifi.ssid=MyNet\r\n", 39);
+    fe_port_uart_write_pgm(0, FE_PSTR("\r\nexamples:\r\n"));
+    fe_port_uart_write_pgm(0, FE_PSTR("  ability_BaseAbility list_ability_names\r\n"));
+    fe_port_uart_write_pgm(0, FE_PSTR("  ability_TimeAbility sync_manual 1700000000\r\n"));
+    fe_port_uart_write_pgm(0, FE_PSTR("  ability_ModbusAbility write_holding 0,42\r\n"));
+    fe_port_uart_write_pgm(0, FE_PSTR("  data_ConfigData set wifi.ssid=MyNet\r\n"));
 }
 
 int main(void) {
-    const char *banner = "\r\nFasterEdge-MCU (ATmega328P / Arduino AVR)\r\ninput: <data|ability>_<Name> <act> [args]  |  'help'\r\n";
+    static const char s_banner[] FE_PROGMEM =
+        "\r\nFasterEdge-MCU (ATmega328P / Arduino AVR)\r\n"
+        "input: <data|ability>_<Name> <act> [args]  |  'help'\r\n";
 
     fe_port_timer0_init();             // 1ms 节拍（时间功能）
     fe_port_uart_init(0, 115200, NULL, NULL);
-    fe_port_uart_write(0, (const u8 *)banner, (u16)strlen(banner));
+    fe_port_uart_write_pgm(0, s_banner);
 
     fe_init_all();
 
     for (;;) {
-        char buf[96];
+        char buf[80];
         u16 len;
         if (read_line(buf, sizeof(buf), &len)) {
             char *sp1, *target, *rest, *sp2, *act, *args;
             fe_output_t out;
-            char oline[128];
+            char oline[96];
             while (len && (buf[len-1] == '\n' || buf[len-1] == '\r')) buf[--len] = 0;
 
-            if (strcmp(buf, "help") == 0) { print_help(); continue; }
+            if (FE_PGM_EQ(buf, "help")) { print_help(); continue; }
 
             sp1 = strchr(buf, ' ');
             if (!sp1) {
-                fe_port_uart_write(0, (const u8 *)"bad command\r\n", 13);
+                fe_port_uart_write_pgm(0, FE_PSTR("bad command\r\n"));
                 continue;
             }
             *sp1 = 0;
@@ -86,9 +88,9 @@ int main(void) {
 
             out = fe_execute(fe_global_atom(), target, act, args ? args : "");
             if (out.ok)
-                fe_snprintf(oline, sizeof(oline), "OK %s -> %s\r\n", out.name, out.value);
+                fe_snprintf_P(oline, sizeof(oline), FE_PSTR("OK %s -> %s\r\n"), out.name, out.value);
             else
-                fe_snprintf(oline, sizeof(oline), "ERR %s: %s\r\n", out.name, out.err);
+                fe_snprintf_P(oline, sizeof(oline), FE_PSTR("ERR %s: %s\r\n"), out.name, out.err);
             fe_port_uart_write(0, (const u8 *)oline, (u16)strlen(oline));
         }
         fe_port_delay_ms(10);

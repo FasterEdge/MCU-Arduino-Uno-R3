@@ -51,77 +51,81 @@ fe_output_t ability_reg_dispatch(void *inst, const char *act, const char *args) 
     u8 ok;
 
     (void)inst;
-    fe_snprintf(tmp, sizeof(tmp), "%s", args ? args : "");
+    fe_snprintf_P(tmp, sizeof(tmp), FE_PSTR("%s"), args ? args : "");
 
-    if (strcmp(act, "read") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("read")) == 0) {
         addr = parse_hex(tmp, &ok);
-        if (!ok || addr > 0xFF) return fe_err(act, "bad register address (0x00-0xFF)");
+        if (!ok || addr > 0xFF) return fe_err_p(act, FE_PSTR("bad register address (0x00-0xFF)"));
         {
             u8 v = FE_REG8(addr);
             char out[48];
-            fe_snprintf(out, sizeof(out), "{\"addr\":\"0x%02X\",\"value\":%u,\"hex\":\"0x%02X\"}",
-                        (unsigned)addr, (unsigned)v, (unsigned)v);
+            fe_snprintf_P(out, sizeof(out),
+                          FE_PSTR("{\"addr\":\"0x%02X\",\"value\":%u,\"hex\":\"0x%02X\"}"),
+                          (unsigned)addr, (unsigned)v, (unsigned)v);
             return fe_ok(act, out);
         }
     }
-    if (strcmp(act, "write") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("write")) == 0) {
         comma = strchr(tmp, ',');
-        if (!comma) return fe_err(act, "bad format, expect addr,value");
+        if (!comma) return fe_err_p(act, FE_PSTR("bad format, expect addr,value"));
         *comma = 0;
         addr = parse_hex(tmp, &ok);
-        if (!ok || addr > 0xFF) return fe_err(act, "bad register address (0x00-0xFF)");
+        if (!ok || addr > 0xFF) return fe_err_p(act, FE_PSTR("bad register address (0x00-0xFF)"));
         {
             u32 val = parse_hex(comma + 1, &ok);
-            if (!ok || val > 0xFF) return fe_err(act, "bad value (0x00-0xFF)");
+            if (!ok || val > 0xFF) return fe_err_p(act, FE_PSTR("bad value (0x00-0xFF)"));
             FE_REG8(addr) = (u8)val;
             char out[48];
-            fe_snprintf(out, sizeof(out), "{\"addr\":\"0x%02X\",\"value\":%u,\"hex\":\"0x%02X\"}",
-                        (unsigned)addr, (unsigned)val, (unsigned)val);
+            fe_snprintf_P(out, sizeof(out),
+                          FE_PSTR("{\"addr\":\"0x%02X\",\"value\":%u,\"hex\":\"0x%02X\"}"),
+                          (unsigned)addr, (unsigned)val, (unsigned)val);
             return fe_ok(act, out);
         }
     }
-    if (strcmp(act, "bit_set") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("bit_set")) == 0) {
         comma = strchr(tmp, ',');
-        if (!comma) return fe_err(act, "bad format, expect addr,bit");
+        if (!comma) return fe_err_p(act, FE_PSTR("bad format, expect addr,bit"));
         *comma = 0;
         addr = parse_hex(tmp, &ok);
-        if (!ok || addr > 0xFF) return fe_err(act, "bad register address (0x00-0xFF)");
+        if (!ok || addr > 0xFF) return fe_err_p(act, FE_PSTR("bad register address (0x00-0xFF)"));
         {
             u32 bit = strtoul(comma + 1, NULL, 0);
             u8 v;
-            if (bit > 7) return fe_err(act, "bit must be 0..7");
+            if (bit > 7) return fe_err_p(act, FE_PSTR("bit must be 0..7"));
             v = FE_REG8(addr);
             v |= (u8)(1u << bit);
             FE_REG8(addr) = v;
             char out[48];
-            fe_snprintf(out, sizeof(out), "{\"addr\":\"0x%02X\",\"bit\":%lu,\"value\":%u}",
-                        (unsigned)addr, (unsigned long)bit, (unsigned)v);
+            fe_snprintf_P(out, sizeof(out),
+                          FE_PSTR("{\"addr\":\"0x%02X\",\"bit\":%lu,\"value\":%u}"),
+                          (unsigned)addr, (unsigned long)bit, (unsigned)v);
             return fe_ok(act, out);
         }
     }
-    if (strcmp(act, "bit_clear") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("bit_clear")) == 0) {
         comma = strchr(tmp, ',');
-        if (!comma) return fe_err(act, "bad format, expect addr,bit");
+        if (!comma) return fe_err_p(act, FE_PSTR("bad format, expect addr,bit"));
         *comma = 0;
         addr = parse_hex(tmp, &ok);
-        if (!ok || addr > 0xFF) return fe_err(act, "bad register address (0x00-0xFF)");
+        if (!ok || addr > 0xFF) return fe_err_p(act, FE_PSTR("bad register address (0x00-0xFF)"));
         {
             u32 bit = strtoul(comma + 1, NULL, 0);
             u8 v;
-            if (bit > 7) return fe_err(act, "bit must be 0..7");
+            if (bit > 7) return fe_err_p(act, FE_PSTR("bit must be 0..7"));
             v = FE_REG8(addr);
             v &= (u8)~(1u << bit);
             FE_REG8(addr) = v;
             char out[48];
-            fe_snprintf(out, sizeof(out), "{\"addr\":\"0x%02X\",\"bit\":%lu,\"value\":%u}",
-                        (unsigned)addr, (unsigned long)bit, (unsigned)v);
+            fe_snprintf_P(out, sizeof(out),
+                          FE_PSTR("{\"addr\":\"0x%02X\",\"bit\":%lu,\"value\":%u}"),
+                          (unsigned)addr, (unsigned long)bit, (unsigned)v);
             return fe_ok(act, out);
         }
     }
-    if (strcmp(act, "info") == 0) {
-        return fe_ok(act,
+    if (FE_PGM_STRCMP(act, FE_PSTR("info")) == 0) {
+        return fe_ok_p(act, FE_PSTR(
             "{\"ability\":\"RegAbility\",\"desc\":\"AVR 内存映射寄存器读写\","
-            "\"addr\":\"0x00-0xFF\",\"width\":8}");
+            "\"addr\":\"0x00-0xFF\",\"width\":8}"));
     }
-    return fe_err(act, "unsupported command");
+    return fe_err_p(act, FE_PSTR("unsupported command"));
 }

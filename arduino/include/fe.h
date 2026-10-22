@@ -9,9 +9,18 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include <vector>
+
+#ifdef __AVR__
+#define FE_EQ_P(a, s)        (strcmp_P((a), PSTR(s)) == 0)
+#define FE_STRN_EQ_P(a, s)   (strncmp_P((a), PSTR(s), sizeof(s) - 1) == 0)
+#else
+#define FE_EQ_P(a, s)        (strcmp((a), (s)) == 0)
+#define FE_STRN_EQ_P(a, s)   (strncmp((a), (s), sizeof(s) - 1) == 0)
+#endif
 
 namespace fe {
+
+enum { FE_MAX_DATA = 16, FE_MAX_ABILITY = 16 };
 
 // ============================================================
 // 基础类型
@@ -66,19 +75,25 @@ public:
     Atom() = default;
 
     // 注册
-    void registerData(const DataDef &d)   { dataList_.push_back(d); }
-    void registerAbility(const AbilityDef &a) { abilityList_.push_back(a); }
+    void registerData(const DataDef &d) {
+        if (dataCount_ < FE_MAX_DATA) dataList_[dataCount_++] = d;
+    }
+    void registerAbility(const AbilityDef &a) {
+        if (abilityCount_ < FE_MAX_ABILITY) abilityList_[abilityCount_++] = a;
+    }
 
     // 查询
-    std::vector<String> listDataNames() const;
-    std::vector<String> listAbilityNames() const;
+    String listDataNames() const;
+    String listAbilityNames() const;
 
     // 执行命令：data_xxx / ability_xxx 前缀路由
     CommandOutput execute(const char *target, const char *act, const String &args);
 
 private:
-    std::vector<DataDef>    dataList_;
-    std::vector<AbilityDef> abilityList_;
+    DataDef    dataList_[FE_MAX_DATA];
+    AbilityDef abilityList_[FE_MAX_ABILITY];
+    uint8_t    dataCount_ = 0;
+    uint8_t    abilityCount_ = 0;
 };
 
 // ============================================================

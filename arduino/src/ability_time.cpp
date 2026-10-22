@@ -13,23 +13,23 @@ static long parseEpoch(const String &s) {
 }
 CommandOutput timeAbilityDispatch(void *inst, const char *act, const String &args) {
     TimeAbility *self = static_cast<TimeAbility *>(inst);
-    if (strcmp(act, "get_time") == 0) {
+    if (FE_EQ_P(act, "get_time")) {
         long epoch = self->manualEpoch + (long)(millis() / 1000);
-        return CommandOutput{String(act), String("epoch=") + epoch, String()};
+        return CommandOutput{String(act), String(F("epoch=")) + epoch, String()};
     }
-    if (strcmp(act, "sync_manual") == 0) {
+    if (FE_EQ_P(act, "sync_manual")) {
         long ep = parseEpoch(args);
-        if (ep <= 0) return CommandOutput{String(act), String(), String("invalid epoch")};
+        if (ep <= 0) return CommandOutput{String(act), String(), String(F("invalid epoch"))};
         self->manualEpoch = ep - (long)(millis() / 1000);
-        return CommandOutput{String(act), String("epoch=") + ep, String()};
+        return CommandOutput{String(act), String(F("epoch=")) + ep, String()};
     }
-    if (strcmp(act, "sync_system") == 0) {
+    if (FE_EQ_P(act, "sync_system")) {
         long epoch = self->manualEpoch + (long)(millis() / 1000);
-        return CommandOutput{String(act), String("epoch=") + epoch, String()};
+        return CommandOutput{String(act), String(F("epoch=")) + epoch, String()};
     }
-    if (strcmp(act, "configure_run") == 0) {
-        return CommandOutput{String(act), String("configured"), String()};
+    if (FE_EQ_P(act, "configure_run")) {
+        return CommandOutput{String(act), String(F("configured")), String()};
     }
-    return CommandOutput{String(act), String(), String("unsupported command: ") + act};
+    return CommandOutput{String(act), String(), String(F("unsupported command: ")) + act};
 }
 } // namespace fe

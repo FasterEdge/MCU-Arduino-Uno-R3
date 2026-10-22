@@ -29,7 +29,6 @@ fe_output_t ability_role_dispatch(void *inst, const char *act, const char *args)
 // 无网络：configure_run 记录可由主循环消费的周期调度状态。
 // ============================================================
 typedef struct {
-    u32 manual_epoch;
     u32 run_interval;
     u32 next_run;
     u8  run_enabled;
@@ -66,10 +65,10 @@ fe_output_t ability_serial_dispatch(void *inst, const char *act, const char *arg
 // ============================================================
 typedef struct {
     u8    unit_id;
-    u16   holding_regs[32];
-    u16   input_regs[32];
-    u8    coils[32];
-    u8    discrete_inputs[32];
+    u16   holding_regs[16];
+    u16   input_regs[16];
+    u8    coils[16];
+    u8    discrete_inputs[16];
 } modbus_ability_t;
 fe_output_t ability_modbus_dispatch(void *inst, const char *act, const char *args);
 // 处理一个完整 Modbus RTU ADU，并通过 fe_port_uart_write(0, ...) 回写响应。

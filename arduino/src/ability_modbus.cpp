@@ -9,10 +9,12 @@
 namespace fe {
 
 ModbusAbility::ModbusAbility() : unitId(1) {
-    holdingRegs.assign(64, 0);
-    inputRegs.assign(64, 0);
-    coils.assign(64, false);
-    discreteInputs.assign(64, false);
+    for (int i = 0; i < REG_COUNT; i++) {
+        holdingRegs[i] = 0;
+        inputRegs[i] = 0;
+        coils[i] = 0;
+        discreteInputs[i] = 0;
+    }
 }
 
 // CRC16 (Modbus)
@@ -31,74 +33,74 @@ static uint16_t modbusCrc(const uint8_t *data, size_t len) {
 CommandOutput modbusAbilityDispatch(void *inst, const char *act, const String &args) {
     ModbusAbility *self = static_cast<ModbusAbility *>(inst);
 
-    if (strcmp(act, "set_unit_id") == 0) {
+    if (FE_EQ_P(act, "set_unit_id")) {
         uint8_t id = (uint8_t)args.toInt();
         if (id == 0 || id > 247)
-            return CommandOutput{String(act), String(), String("invalid unit id")};
+            return CommandOutput{String(act), String(), String(F("invalid unit id"))};
         self->unitId = id;
-        return CommandOutput{String(act), String("unit_id=") + id, String()};
+        return CommandOutput{String(act), String(F("unit_id=")) + id, String()};
     }
-    if (strcmp(act, "get_unit_id") == 0) {
-        return CommandOutput{String(act), String("unit_id=") + (int)self->unitId, String()};
+    if (FE_EQ_P(act, "get_unit_id")) {
+        return CommandOutput{String(act), String(F("unit_id=")) + (int)self->unitId, String()};
     }
 
     // 参数统一格式：addr[,count]（从 0 开始）
     int comma = args.indexOf(',');
     int addr = (comma > 0 ? args.substring(0, comma) : args).toInt();
-    int count = (comma > 0 ? args.substring(comma + 1) : "1").toInt();
-    if (addr < 0 || count < 0) return CommandOutput{String(act), String(), String("bad args")};
+    int count = (comma > 0 ? args.substring(comma + 1) : String(F("1"))).toInt();
+    if (addr < 0 || count < 0) return CommandOutput{String(act), String(), String(F("bad args"))};
 
-    if (strcmp(act, "read_holding") == 0) {
-        if (addr > (int)self->holdingRegs.size() - count)
-            return CommandOutput{String(act), String(), String("addr out of range")};
-        String out = "[";
-        for (int i = 0; i < count; i++) { if (i) out += ","; out += self->holdingRegs[addr + i]; }
-        out += "]";
+    if (FE_EQ_P(act, "read_holding")) {
+        if (addr > ModbusAbility::REG_COUNT - count)
+            return CommandOutput{String(act), String(), String(F("addr out of range"))};
+        String out = F("[");
+        for (int i = 0; i < count; i++) { if (i) out += F(","); out += self->holdingRegs[addr + i]; }
+        out += F("]");
         return CommandOutput{String(act), out, String()};
     }
-    if (strcmp(act, "read_input") == 0) {
-        if (addr > (int)self->inputRegs.size() - count)
-            return CommandOutput{String(act), String(), String("addr out of range")};
-        String out = "[";
-        for (int i = 0; i < count; i++) { if (i) out += ","; out += self->inputRegs[addr + i]; }
-        out += "]";
+    if (FE_EQ_P(act, "read_input")) {
+        if (addr > ModbusAbility::REG_COUNT - count)
+            return CommandOutput{String(act), String(), String(F("addr out of range"))};
+        String out = F("[");
+        for (int i = 0; i < count; i++) { if (i) out += F(","); out += self->inputRegs[addr + i]; }
+        out += F("]");
         return CommandOutput{String(act), out, String()};
     }
-    if (strcmp(act, "read_coils") == 0) {
-        if (addr > (int)self->coils.size() - count)
-            return CommandOutput{String(act), String(), String("addr out of range")};
-        String out = "[";
-        for (int i = 0; i < count; i++) { if (i) out += ","; out += self->coils[addr + i] ? "1" : "0"; }
-        out += "]";
+    if (FE_EQ_P(act, "read_coils")) {
+        if (addr > ModbusAbility::REG_COUNT - count)
+            return CommandOutput{String(act), String(), String(F("addr out of range"))};
+        String out = F("[");
+        for (int i = 0; i < count; i++) { if (i) out += F(","); out += self->coils[addr + i] ? '1' : '0'; }
+        out += F("]");
         return CommandOutput{String(act), out, String()};
     }
-    if (strcmp(act, "read_discrete") == 0) {
-        if (addr > (int)self->discreteInputs.size() - count)
-            return CommandOutput{String(act), String(), String("addr out of range")};
-        String out = "[";
-        for (int i = 0; i < count; i++) { if (i) out += ","; out += self->discreteInputs[addr + i] ? "1" : "0"; }
-        out += "]";
+    if (FE_EQ_P(act, "read_discrete")) {
+        if (addr > ModbusAbility::REG_COUNT - count)
+            return CommandOutput{String(act), String(), String(F("addr out of range"))};
+        String out = F("[");
+        for (int i = 0; i < count; i++) { if (i) out += F(","); out += self->discreteInputs[addr + i] ? '1' : '0'; }
+        out += F("]");
         return CommandOutput{String(act), out, String()};
     }
-    if (strcmp(act, "write_holding") == 0) {
+    if (FE_EQ_P(act, "write_holding")) {
         // 参数：addr,value
-        if (comma <= 0) return CommandOutput{String(act), String(), String("expect addr,value")};
+        if (comma <= 0) return CommandOutput{String(act), String(), String(F("expect addr,value"))};
         uint16_t value = (uint16_t)args.substring(comma + 1).toInt();
-        if (addr >= (int)self->holdingRegs.size())
-            return CommandOutput{String(act), String(), String("addr out of range")};
+        if (addr >= ModbusAbility::REG_COUNT)
+            return CommandOutput{String(act), String(), String(F("addr out of range"))};
         self->holdingRegs[addr] = value;
-        return CommandOutput{String(act), String("{\"written\":true}"), String()};
+        return CommandOutput{String(act), String(F("{\"written\":true}")), String()};
     }
-    if (strcmp(act, "write_coil") == 0) {
-        if (comma <= 0) return CommandOutput{String(act), String(), String("expect addr,value")};
+    if (FE_EQ_P(act, "write_coil")) {
+        if (comma <= 0) return CommandOutput{String(act), String(), String(F("expect addr,value"))};
         bool value = args.substring(comma + 1).toInt() != 0;
-        if (addr >= (int)self->coils.size())
-            return CommandOutput{String(act), String(), String("addr out of range")};
+        if (addr >= ModbusAbility::REG_COUNT)
+            return CommandOutput{String(act), String(), String(F("addr out of range"))};
         self->coils[addr] = value;
-        return CommandOutput{String(act), String("{\"written\":true}"), String()};
+        return CommandOutput{String(act), String(F("{\"written\":true}")), String()};
     }
 
-    return CommandOutput{String(act), String(), String("unsupported command: ") + act};
+    return CommandOutput{String(act), String(), String(F("unsupported command: ")) + act};
 }
 
 } // namespace fe

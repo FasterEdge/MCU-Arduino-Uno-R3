@@ -13,30 +13,44 @@ void setup() {
     Serial.begin(115200);
     delay(200);
     Serial.println();
-    Serial.println("FasterEdge-MCU (ATmega328P / Arduino)");
-    Serial.println("input: <data|ability>_<Name> <act> [args]  |  'help'");
+    Serial.println(F("FasterEdge-MCU (ATmega328P / Arduino)"));
+    Serial.println(F("input: <data|ability>_<Name> <act> [args]  |  'help'"));
     initAll();
 }
 
 void printHelp() {
-    Serial.println("Usage: <data|ability>_<Name> <act> [args]");
+    Serial.println(F("Usage: <data|ability>_<Name> <act> [args]"));
     auto &atom = globalAtom();
-    auto names = atom.listAbilityNames();
-    Serial.print("abilities: ");
-    for (auto &n : names) { Serial.print(n); Serial.print(" "); }
+    String names = atom.listAbilityNames();
+    Serial.print(F("abilities: "));
+    int start = 0;
+    while (start <= names.length()) {
+        int end = names.indexOf(',', start);
+        String n = end >= 0 ? names.substring(start, end) : names.substring(start);
+        if (n.length() > 0) { Serial.print(n); Serial.print(' '); }
+        if (end < 0) break;
+        start = end + 1;
+    }
     Serial.println();
-    auto dnames = atom.listDataNames();
-    Serial.print("data: ");
-    for (auto &n : dnames) { Serial.print(n); Serial.print(" "); }
+    String dnames = atom.listDataNames();
+    Serial.print(F("data: "));
+    start = 0;
+    while (start <= dnames.length()) {
+        int end = dnames.indexOf(',', start);
+        String n = end >= 0 ? dnames.substring(start, end) : dnames.substring(start);
+        if (n.length() > 0) { Serial.print(n); Serial.print(' '); }
+        if (end < 0) break;
+        start = end + 1;
+    }
     Serial.println();
-    Serial.println("examples:");
-    Serial.println("  ability_BaseAbility list_ability_names");
-    Serial.println("  ability_RoleAbility set_role edge");
-    Serial.println("  ability_TimeAbility sync_manual 1700000000");
-    Serial.println("  ability_OneKeyAbility issue_token sensor01");
-    Serial.println("  ability_SerialAbility open 0");
-    Serial.println("  ability_ModbusAbility write_holding 0,42");
-    Serial.println("  data_ConfigData set wifi.ssid=MyNet");
+    Serial.println(F("examples:"));
+    Serial.println(F("  ability_BaseAbility list_ability_names"));
+    Serial.println(F("  ability_RoleAbility set_role edge"));
+    Serial.println(F("  ability_TimeAbility sync_manual 1700000000"));
+    Serial.println(F("  ability_OneKeyAbility issue_token sensor01"));
+    Serial.println(F("  ability_SerialAbility open 0"));
+    Serial.println(F("  ability_ModbusAbility write_holding 0,42"));
+    Serial.println(F("  data_ConfigData set wifi.ssid=MyNet"));
 }
 
 void loop() {
@@ -45,11 +59,11 @@ void loop() {
         if (c == '\n') {
             inputBuffer.trim();
             if (inputBuffer.length() == 0) { inputBuffer = ""; continue; }
-            if (inputBuffer == "help") { printHelp(); inputBuffer = ""; continue; }
+            if (strcmp_P(inputBuffer.c_str(), PSTR("help")) == 0) { printHelp(); inputBuffer = ""; continue; }
 
             int sp1 = inputBuffer.indexOf(' ');
             if (sp1 <= 0) {
-                Serial.println("bad command");
+                Serial.println(F("bad command"));
                 inputBuffer = "";
                 continue;
             }
@@ -62,14 +76,14 @@ void loop() {
 
             CommandOutput out = globalAtom().execute(target.c_str(), act.c_str(), args);
             if (out.ok()) {
-                Serial.print("OK ");
+                Serial.print(F("OK "));
                 Serial.print(out.name);
-                if (out.value.length()) { Serial.print(" -> "); Serial.print(out.value); }
+                if (out.value.length()) { Serial.print(F(" -> ")); Serial.print(out.value); }
                 Serial.println();
             } else {
-                Serial.print("ERR ");
+                Serial.print(F("ERR "));
                 Serial.print(out.name);
-                Serial.print(": ");
+                Serial.print(F(": "));
                 Serial.println(out.err);
             }
             inputBuffer = "";

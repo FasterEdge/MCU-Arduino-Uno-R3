@@ -5,29 +5,33 @@
 #include "fe_port.h"
 #include <string.h>
 
-fe_output_t ability_role_dispatch(void *inst, const char *act, const char *args) {
-    role_ability_t *self = (role_ability_t *)inst;
+static role_ability_t s_role;
 
-    if (strcmp(act, "describe") == 0) {
+fe_output_t ability_role_dispatch(void *inst, const char *act, const char *args) {
+    role_ability_t *self = &s_role;
+    (void)inst;
+
+    if (FE_PGM_STRCMP(act, FE_PSTR("describe")) == 0) {
         char out[80];
-        fe_snprintf(out, sizeof(out), "{\"name\":\"RoleAbility\",\"role\":\"%s\"}", self->role);
+        fe_snprintf_P(out, sizeof(out), FE_PSTR("{\"name\":\"RoleAbility\",\"role\":\"%s\"}"), self->role);
         return fe_ok(act, out);
     }
-    if (strcmp(act, "set_role") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("set_role")) == 0) {
         if (!args || args[0] == 0)
-            return fe_err(act, "missing role");
-        if (strcmp(args, "edge") != 0 && strcmp(args, "cloud") != 0 &&
-            strcmp(args, "standalone") != 0)
-            return fe_err(act, "invalid role");
-        fe_snprintf(self->role, sizeof(self->role), "%s", args);
+            return fe_err_p(act, FE_PSTR("missing role"));
+        if (FE_PGM_STRCMP(args, FE_PSTR("edge")) != 0 &&
+            FE_PGM_STRCMP(args, FE_PSTR("cloud")) != 0 &&
+            FE_PGM_STRCMP(args, FE_PSTR("standalone")) != 0)
+            return fe_err_p(act, FE_PSTR("invalid role"));
+        fe_snprintf_P(self->role, sizeof(self->role), FE_PSTR("%s"), args);
         char out[48];
-        fe_snprintf(out, sizeof(out), "role=%s", self->role);
+        fe_snprintf_P(out, sizeof(out), FE_PSTR("role=%s"), self->role);
         return fe_ok(act, out);
     }
-    if (strcmp(act, "get_role") == 0) {
+    if (FE_PGM_STRCMP(act, FE_PSTR("get_role")) == 0) {
         char out[48];
-        fe_snprintf(out, sizeof(out), "role=%s", self->role);
+        fe_snprintf_P(out, sizeof(out), FE_PSTR("role=%s"), self->role);
         return fe_ok(act, out);
     }
-    return fe_err(act, "unsupported command");
+    return fe_err_p(act, FE_PSTR("unsupported command"));
 }

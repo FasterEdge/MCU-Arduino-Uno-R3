@@ -35,6 +35,22 @@ int fe_snprintf(char *buf, u16 size, const char *fmt, ...) {
     return n;
 }
 
+int fe_snprintf_P(char *buf, u16 size, const char *fmt_p, ...) {
+    va_list ap;
+    int n;
+    if (size == 0) return 0;
+    va_start(ap, fmt_p);
+#ifdef __AVR__
+    n = vsnprintf_P(buf, size, (PGM_P)fmt_p, ap);
+#else
+    n = vsnprintf(buf, size, fmt_p, ap);
+#endif
+    va_end(ap);
+    if (n < 0) { buf[0] = 0; return 0; }
+    if ((u16)n >= size) { buf[size - 1] = 0; return (int)(size - 1); }
+    return n;
+}
+
 // ============================================================
 // 串口（USART0）
 // ============================================================
@@ -73,6 +89,21 @@ u16 fe_port_uart_write(u8 port, const u8 *data, u16 len) {
         UDR0 = data[i];
     }
     return len;
+}
+
+void fe_port_uart_write_pgm(u8 port, const char *data_p) {
+    u8 b;
+#ifdef __AVR__
+    while ((b = (u8)FE_PGM_CHAR(data_p)) != 0) {
+        fe_port_uart_write(port, &b, 1);
+        data_p++;
+    }
+#else
+    while ((b = (u8)*data_p) != 0) {
+        fe_port_uart_write(port, &b, 1);
+        data_p++;
+    }
+#endif
 }
 
 u8 fe_port_uart_available(u8 port) {
@@ -212,12 +243,12 @@ int fe_port_gpio_set_mode(u8 pin, const char *mode) {
     volatile uint8_t *pin_reg;
     u8 bit;
     if (pin_port_bit(pin, &ddr, &port, &pin_reg, &bit) != 0) return -1;
-    if (strcmp(mode, "output") == 0) {
+    if (FE_PGM_EQ(mode, "output")) {
         *ddr |= (u8)(1 << bit);
-    } else if (strcmp(mode, "input") == 0) {
+    } else if (FE_PGM_EQ(mode, "input")) {
         *ddr &= (u8)~(1 << bit);
         *port &= (u8)~(1 << bit);       // 关闭上拉
-    } else if (strcmp(mode, "input_pullup") == 0) {
+    } else if (FE_PGM_EQ(mode, "input_pullup")) {
         *ddr &= (u8)~(1 << bit);
         *port |= (u8)(1 << bit);        // 使能内部上拉
     } else {
@@ -248,11 +279,11 @@ int fe_port_gpio_read(u8 pin) {
 // 芯片信息
 // ============================================================
 void fe_port_chip_info(char *out, u16 outlen) {
-    fe_snprintf(out, outlen,
-                "{\"chip\":\"ATmega328P\",\"arch\":\"AVR\","
-                "\"ramBytes\":2048,\"flashBytes\":32768,\"eepromBytes\":1024,"
-                "\"freqMHz\":%lu}",
-                (unsigned long)(F_CPU / 1000000UL));
+    fe_snprintf_P(out, outlen,
+                  FE_PSTR("{\"chip\":\"ATmega328P\",\"arch\":\"AVR\","
+                          "\"ramBytes\":2048,\"flashBytes\":32768,\"eepromBytes\":1024,"
+                          "\"freqMHz\":%lu}"),
+                  (unsigned long)(F_CPU / 1000000UL));
 }
 
 // ============================================================

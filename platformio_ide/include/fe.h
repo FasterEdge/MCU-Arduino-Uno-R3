@@ -45,26 +45,24 @@ typedef struct {
 // 命令执行回调：inst 为各模块实例，act 命令名，args 参数字符串
 typedef fe_output_t (*fe_cmd_handler_t)(void *inst, const char *act, const char *args);
 
-// 命令表项
+// 命令表项（模块级 dispatch 统一路由，表中只需名字）
 typedef struct {
     const char *name;
-    fe_cmd_handler_t handler;
 } fe_cmd_t;
 
-// 模块（Data / Ability 通用描述）
+// 模块（Data / Ability 通用描述；实例由各模块源文件自持，避免注册表冗余）
 typedef struct {
-    const char *name;       // 如 "BaseData" / "BaseAbility"
-    const char *desc;
-    const fe_cmd_t *cmds;
+    const char *name;       // 如 "BaseData" / "BaseAbility"（flash）
+    const fe_cmd_t *cmds;   // flash 命令表
     u8 cmd_count;
-    void *instance;
     fe_cmd_handler_t dispatch;
 } fe_module_t;
 
 // ============================================================
 // Atom：注册表 + 命令路由
 // ============================================================
-#define FE_MAX_MODULES 16
+// 实际注册 3 data + 8 ability = 11。
+#define FE_MAX_MODULES 11
 
 typedef struct {
     fe_module_t data[FE_MAX_MODULES];
@@ -87,6 +85,9 @@ fe_output_t fe_execute(fe_atom_t *atom, const char *target, const char *act, con
 // 构建输出工具
 fe_output_t fe_ok(const char *name, const char *value);
 fe_output_t fe_err(const char *name, const char *err);
+// value/err 位于 flash（AVR PROGMEM）时的版本
+fe_output_t fe_ok_p(const char *name, const char *value_p);
+fe_output_t fe_err_p(const char *name, const char *err_p);
 
 // ============================================================
 // 全局 Atom + 初始化（由 register.c 实现）

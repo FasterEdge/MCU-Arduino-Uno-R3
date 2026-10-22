@@ -37,16 +37,16 @@ static void writeValue(int slot, const String &value) {
 }
 CommandOutput configDataDispatch(void *inst, const char *act, const String &args) {
     (void)inst;
-    if (strcmp(act, "get") == 0) {
-        if (args.length() == 0) return CommandOutput{String(act), String(), String("missing key")};
+    if (FE_EQ_P(act, "get")) {
+        if (args.length() == 0) return CommandOutput{String(act), String(), String(F("missing key"))};
         String key = normalizeKey(args);
         int slot = findSlot(key);
-        if (slot < 0) return CommandOutput{String(act), String("{}"), String()};
-        return CommandOutput{String(act), String("{\"") + key + "\":\"" + readValue(slot) + "\"}", String()};
+        if (slot < 0) return CommandOutput{String(act), String(F("{}")), String()};
+        return CommandOutput{String(act), String(F("{\"")) + key + F("\":\"") + readValue(slot) + F("\"}"), String()};
     }
-    if (strcmp(act, "set") == 0) {
+    if (FE_EQ_P(act, "set")) {
         int eq = args.indexOf('=');
-        if (eq <= 0) return CommandOutput{String(act), String(), String("bad format, expect key=value")};
+        if (eq <= 0) return CommandOutput{String(act), String(), String(F("bad format, expect key=value"))};
         String key = normalizeKey(args.substring(0, eq));
         String value = args.substring(eq + 1);
         int slot = findSlot(key);
@@ -55,35 +55,37 @@ CommandOutput configDataDispatch(void *inst, const char *act, const String &args
                 char c = (char)EEPROM.read(i * CFG_ENTRY);
                 if (c == 0 || (uint8_t)c == 0xFF) { slot = i; break; }
             }
-            if (slot < 0) return CommandOutput{String(act), String(), String("config full")};
+            if (slot < 0) return CommandOutput{String(act), String(), String(F("config full"))};
             for (size_t j = 0; j < (size_t)CFG_KEY_LEN; j++)
                 EEPROM.write(slot * CFG_ENTRY + j, (uint8_t)(j < key.length() ? key[j] : 0));
         }
         writeValue(slot, value);
-        return CommandOutput{String(act), String("saved"), String()};
+        return CommandOutput{String(act), String(F("saved")), String()};
     }
-    if (strcmp(act, "delete") == 0) {
-        if (args.length() == 0) return CommandOutput{String(act), String(), String("missing key")};
+    if (FE_EQ_P(act, "delete")) {
+        if (args.length() == 0) return CommandOutput{String(act), String(), String(F("missing key"))};
         String key = normalizeKey(args);
         int slot = findSlot(key);
         if (slot >= 0) for (int j = 0; j < CFG_KEY_LEN; j++) EEPROM.write(slot * CFG_ENTRY + j, 0);
-        return CommandOutput{String(act), String("deleted"), String()};
+        return CommandOutput{String(act), String(F("deleted")), String()};
     }
-    if (strcmp(act, "list") == 0) {
+    if (FE_EQ_P(act, "list")) {
         String list;
         for (int i = 0; i < CFG_SLOTS; i++) {
             char k[CFG_KEY_LEN];
             for (int j = 0; j < CFG_KEY_LEN; j++) k[j] = (char)EEPROM.read(i * CFG_ENTRY + j);
             if (k[0] != 0 && (uint8_t)k[0] != 0xFF) {
-                if (list.length()) list += ",";
-                list += String("\"") + String(k).substring(0, strnlen(k, CFG_KEY_LEN)) + "\"";
+                if (list.length()) list += F(",");
+                list += F("\"");
+                list += String(k).substring(0, strnlen(k, CFG_KEY_LEN));
+                list += F("\"");
             }
         }
-        return CommandOutput{String(act), String("{\"keys\":[") + list + "]}", String()};
+        return CommandOutput{String(act), String(F("{\"keys\":[")) + list + F("]}"), String()};
     }
-    if (strcmp(act, "snapshot") == 0) {
-        return CommandOutput{String(act), String("{\"snapshot\":{}}"), String()};
+    if (FE_EQ_P(act, "snapshot")) {
+        return CommandOutput{String(act), String(F("{\"snapshot\":{}}")), String()};
     }
-    return CommandOutput{String(act), String(), String("unsupported command: ") + act};
+    return CommandOutput{String(act), String(), String(F("unsupported command: ")) + act};
 }
 } // namespace fe

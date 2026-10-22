@@ -6,7 +6,7 @@
 namespace fe {
 
 // 简单的 ASCII logo（与 FasterEdge 主仓库 BaseData.logo 呼应）
-static const char *LOGO =
+static const char LOGO[] PROGMEM =
     "  __ _        _\n"
     " / _| |_ _  _(_)__ _\n"
     "|  _|  _| || | / _` |\n"
@@ -15,16 +15,16 @@ static const char *LOGO =
 
 CommandOutput baseDataDispatch(void *inst, const char *act, const String &args) {
     (void)inst; (void)args;
-    if (strcmp(act, "logo") == 0) {
-        return CommandOutput{String(act), String(LOGO), String()};
+    if (FE_EQ_P(act, "logo")) {
+        return CommandOutput{String(act), String((const __FlashStringHelper *)LOGO), String()};
     }
-    if (strcmp(act, "info") == 0) {
+    if (FE_EQ_P(act, "info")) {
         return CommandOutput{String(act),
-            String("{\"name\":\"BaseData\",\"firmware\":\"FasterEdge-MCU 1.0.20260831\","
-                   "\"chip\":\"ATmega328P\",\"sdk\":\"Arduino\",\"cores\":1,"
-                   "\"freq\":16}"), String()};
+            String(F("{\"name\":\"BaseData\",\"firmware\":\"FasterEdge-MCU 1.0.20261022\","
+                     "\"chip\":\"ATmega328P\",\"sdk\":\"Arduino\",\"cores\":1,"
+                     "\"freq\":16}")), String()};
     }
-    return CommandOutput{String(act), String(), String("unsupported command: ") + act};
+    return CommandOutput{String(act), String(), String(F("unsupported command: ")) + act};
 }
 
 } // namespace fe
