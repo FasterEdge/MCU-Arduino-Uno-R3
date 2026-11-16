@@ -20,7 +20,7 @@ CommandOutput baseDataDispatch(void *inst, const char *act, const String &args) 
     }
     if (FE_EQ_P(act, "info")) {
         return CommandOutput{String(act),
-            String(F("{\"name\":\"BaseData\",\"firmware\":\"FasterEdge-MCU 1.0.20261022\","
+            String(F("{\"name\":\"BaseData\",\"firmware\":\"FasterEdge-MCU 1.0.20261116\","
                      "\"chip\":\"ATmega328P\",\"sdk\":\"Arduino\",\"cores\":1,"
                      "\"freq\":16}")), String()};
     }

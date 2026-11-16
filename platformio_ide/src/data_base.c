@@ -23,7 +23,7 @@ fe_output_t data_base_dispatch(void *inst, const char *act, const char *args) {
     }
     if (FE_PGM_STRCMP(act, FE_PSTR("info")) == 0) {
         return fe_ok_p(act, FE_PSTR(
-            "{\"name\":\"BaseData\",\"firmware\":\"FasterEdge-MCU 1.0.20261022\","
+            "{\"name\":\"BaseData\",\"firmware\":\"FasterEdge-MCU 1.0.20261116\","
             "\"chip\":\"ATmega328P\",\"sdk\":\"bare-metal AVR\"}"));
     }
     return fe_err_p(act, FE_PSTR("unsupported command"));
